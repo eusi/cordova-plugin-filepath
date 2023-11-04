@@ -1,3 +1,11 @@
+**This repo is forked for the purpose to make it work with IONIC 3, Cordova Android 11 and also Android SDK 33+**
+
+Version 1.6.1-dev, "cordova-plugin-filepath": "git+https://github.com/eusi/cordova-plugin-filepath.git"
+
+
+--------------------
+
+
 # cordova-plugin-filepath
 
 **PLEASE NOTE: This plugin is no longer actively maintained.**

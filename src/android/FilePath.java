@@ -48,9 +48,16 @@ public class FilePath extends CordovaPlugin {
     public static final int READ_REQ_CODE = 0;
 
     public static final String READ = Manifest.permission.READ_EXTERNAL_STORAGE;
+    public static final String VIDEO = Manifest.permission.READ_MEDIA_VIDEO;
+    public static final String IMAGES = Manifest.permission.READ_MEDIA_IMAGES;
 
     protected void getReadPermission(int requestCode) {
-        PermissionHelper.requestPermission(this, requestCode, READ);
+        if(android.os.Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            PermissionHelper.requestPermission(this, requestCode, VIDEO);
+            PermissionHelper.requestPermission(this, requestCode, IMAGES);
+        } else {
+            PermissionHelper.requestPermission(this, requestCode, READ);
+        }
     }
 
     public void initialize(CordovaInterface cordova, final CordovaWebView webView) {
@@ -71,7 +78,8 @@ public class FilePath extends CordovaPlugin {
         this.uriStr = args.getString(0);
 
         if (action.equals("resolveNativePath")) {
-            if (PermissionHelper.hasPermission(this, READ)) {
+            if (PermissionHelper.hasPermission(this, READ) || 
+            (PermissionHelper.hasPermission(this, VIDEO) && PermissionHelper.hasPermission(this, IMAGES))) {
                 resolveNativePath();
             }
             else {
@@ -106,13 +114,13 @@ public class FilePath extends CordovaPlugin {
         if (filePath == GET_PATH_ERROR_ID) {
             resultObj.put("code", GET_PATH_ERROR_CODE);
             resultObj.put("message", "Unable to resolve filesystem path.");
-
+            
             this.callback.error(resultObj);
         }
         else if (filePath.equals(GET_CLOUD_PATH_ERROR_ID)) {
             resultObj.put("code", GET_CLOUD_PATH_ERROR_CODE);
             resultObj.put("message", "Files from cloud cannot be resolved to filesystem, download is required.");
-
+            
             this.callback.error(resultObj);
         }
         else {
@@ -129,7 +137,7 @@ public class FilePath extends CordovaPlugin {
                 JSONObject resultObj = new JSONObject();
                 resultObj.put("code", 3);
                 resultObj.put("message", "Filesystem permission was denied.");
-
+        
                 this.callback.error(resultObj);
                 return;
             }
@@ -302,20 +310,6 @@ public class FilePath extends CordovaPlugin {
     }
 
     /**
-     * sometimes in raw type, the second part is a valid filepath
-     *
-     * @param rawPath The raw path
-     */
-    private static String getRawFilepath(String rawPath) {
-        final String[] split = rawPath.split(":");
-        if (fileExists(split[1])) {
-            return split[1];
-        }
-
-        return "";
-    }
-
-    /**
      * Get a file path from a Uri. This will get the the path for Storage Access
      * Framework Documents, as well as the _data field for the MediaStore and
      * other file-based ContentProviders.<br>
@@ -375,13 +369,6 @@ public class FilePath extends CordovaPlugin {
                 }
                 //
                 final String id = DocumentsContract.getDocumentId(uri);
-
-                // sometimes in raw type, the second part is a valid filepath
-                final String rawFilepath = getRawFilepath(id);
-                if (rawFilepath != "") {
-                    return rawFilepath;
-                }
-
                 String[] contentUriPrefixesToTry = new String[]{
                         "content://downloads/public_downloads",
                         "content://downloads/my_downloads"
